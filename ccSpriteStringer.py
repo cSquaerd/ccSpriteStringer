@@ -178,6 +178,23 @@ def stringifyImageWithColor(
 	return s
 # Command line handling
 if __name__ == "__main__":
+	if "-h" in sys.argv:
+		print("Usage: python ccSpriteStringer.py [flags] imageFilename\n")
+		print("Flags:")
+		print("    -h")
+		print("        Show this helpful information page\n")
+		print("    -w outputFilename")
+		print("        Write the ANSI escape codes and block characters into a text file\n")
+		print("    -B")
+		print("        Print with full-block characters only (bigger than usual)\n")
+		print("    -p offset")
+		print("        Print the sprite with offset many spaces on the left of each line;")
+		print("        Must be greater than 0\n")
+		print("    -d darknessLevel")
+		print("        Adjust the value by which the dark colors are represented;")
+		print("        The default internal value is 0x55, or 85 in decimal\n")
+		exit(0)
+
 	try:
 		source = cv.imread(sys.argv[-1], cv.IMREAD_UNCHANGED)
 		if source is None:
