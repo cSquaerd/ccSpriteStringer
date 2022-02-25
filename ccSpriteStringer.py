@@ -177,6 +177,7 @@ def stringifyImageWithColor(
 		
 	return s
 # Command line handling
+callForHelp = "\nRun this program with the -h flag for a help page"
 if __name__ == "__main__":
 	if "-h" in sys.argv:
 		print("Usage: python ccSpriteStringer.py [flags] imageFilename\n")
@@ -206,9 +207,11 @@ if __name__ == "__main__":
 		source = cv.imread(sys.argv[-1], cv.IMREAD_UNCHANGED)
 		if source is None:
 			print("Error: Image file not found!\n\t" + sys.argv[-1])
+			print(callForHelp)
 			exit(-1)
 	except IndexError as i:
-		print("Error: No image file provided!\n\t" + i)
+		print("Error: No image file provided!\n\t" + str(i))
+		print(callForHelp)
 		exit(-1)
 
 	writeOut = False
@@ -221,7 +224,8 @@ if __name__ == "__main__":
 			outFilename = sys.argv[sys.argv.index("-w") + 1]
 			writeOut = True
 		except IndexError as i:
-			print("Error: No output image filename provided!\n\t" + i)
+			print("Error: No output image filename provided!\n\t" + str(i))
+			print(callForHelp)
 			exit(-1)
 
 	if "-B" in sys.argv:
@@ -231,31 +235,36 @@ if __name__ == "__main__":
 		try:
 			padding = int(sys.argv[sys.argv.index("-p") + 1])
 		except IndexError as i:
-			print("Error: No left padding amount specified!\n\t" + i)
+			print("Error: No left padding amount specified!\n\t" + str(i))
+			print(callForHelp)
 			exit(-1)
 		except ValueError as v:
-			print("Error: Could not parse padding amount!\n\t" + v)
+			print("Error: Could not parse padding amount!\n\t" + str(v))
+			print(callForHelp)
 			exit(-1)
 
 	if "-d" in sys.argv:
 		try:
 			dd = int(sys.argv[sys.argv.index("-d") + 1], base = 0)
 		except IndexError as i:
-			print("Error: No darkness delta amount specified!\n\t" + i)
+			print("Error: No darkness delta amount specified!\n\t" + str(i))
+			print(callForHelp)
 			exit(-1)
 		except ValueError as v:
-			print("Error: Could not parse darkness delta amount!\n\t" + v)
+			print("Error: Could not parse darkness delta amount!\n\t" + str(v))
+			print(callForHelp)
 			exit(-1)
 
 	if "-D" in sys.argv:
 		i = sys.argv.index("-D")
-		if len(sys.argv) > i + 3:
+		if len(sys.argv) - 1 > i + 3:
 			try:
 				begin = int(sys.argv[i + 1], base = 0)
 				end = int(sys.argv[i + 2], base = 0)
 				step = int(sys.argv[i + 3], base = 0)
 			except ValueError as v:
-				print("Error: Could not parse darkness range parameter!\n\t" + v)
+				print("Error: Could not parse darkness range parameter!\n\t" + str(v))
+				print(callForHelp)
 				exit(-1)
 			count = (end - begin) // step + 1
 		else:
