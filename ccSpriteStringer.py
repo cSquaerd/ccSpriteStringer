@@ -188,11 +188,18 @@ if __name__ == "__main__":
 		print("    -B")
 		print("        Print with full-block characters only (bigger than usual)\n")
 		print("    -p offset")
-		print("        Print the sprite with offset many spaces on the left of each line;")
+		print("        Print the sprite with `offset` many spaces on the left of each line;")
 		print("        Must be greater than 0\n")
-		print("    -d darknessLevel")
+		print("    -d darknessDelta")
 		print("        Adjust the value by which the dark colors are represented;")
-		print("        The default internal value is 0x55, or 85 in decimal\n")
+		print("        The default internal value is 0x55, or 85 in decimal;")
+		print("        Must be greater than 0 and less than 255\n")
+		print("    -D [begin end step]")
+		print("        Run through a range of darknessDelta values and show their results;")
+		print("        The default values are `begin`=16, `end`=136, and `step`=8;")
+		print("        Useful for when the default darknessDelta does not yield")
+		print("        satisfactory results; Ignores the -w flag;")
+		print("        `begin` must be less than `end`, and both must be between 0 and 255")
 		exit(0)
 
 	try:
@@ -232,17 +239,33 @@ if __name__ == "__main__":
 
 	if "-d" in sys.argv:
 		try:
-			dd = sys.argv[sys.argv.index("-d") + 1]
-			if len(dd) > 2 and dd[:2] == "0x":
-				dd = int(dd, base = 16)
-			else:
-				dd = int(dd)
+			dd = int(sys.argv[sys.argv.index("-d") + 1], base = 0)
 		except IndexError as i:
 			print("Error: No darkness delta amount specified!\n\t" + i)
 			exit(-1)
 		except ValueError as v:
 			print("Error: Could not parse darkness delta amount!\n\t" + v)
 			exit(-1)
+
+	if "-D" in sys.argv:
+		i = sys.argv.index("-D")
+		if len(sys.argv) > i + 3:
+			try:
+				begin = int(sys.argv[i + 1], base = 0)
+				end = int(sys.argv[i + 2], base = 0)
+				step = int(sys.argv[i + 3], base = 0)
+			except ValueError as v:
+				print("Error: Could not parse darkness range parameter!\n\t" + v)
+				exit(-1)
+			count = (end - begin) // step + 1
+		else:
+			begin = 0x10
+			count = 16
+			step = 8
+		for d in (np.arange(count) * step) + begin:
+			print("darknessDelta:", d, "(0x" + format(d, "x") + ")")
+			print(stringifyImageWithColor(source, padding, d, BIGSHOT))
+		exit(0)
 
 	s = stringifyImageWithColor(source, padding, dd, BIGSHOT)
 	print(s)
