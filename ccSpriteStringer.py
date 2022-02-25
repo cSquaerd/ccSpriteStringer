@@ -191,6 +191,9 @@ if __name__ == "__main__":
 		print("    -p offset")
 		print("        Print the sprite with `offset` many spaces on the left of each line;")
 		print("        Must be greater than 0\n")
+		print("    -c")
+		print("        Compose a cowfile with the results, with three thoughts lines,")
+		print("        and a minimum `padding` value of 8; Requires the -w flag beforehand\n")
 		print("    -d darknessDelta")
 		print("        Adjust the value by which the dark colors are represented;")
 		print("        The default internal value is 0x55, or 85 in decimal;")
@@ -215,6 +218,7 @@ if __name__ == "__main__":
 		exit(-1)
 
 	writeOut = False
+	makeCow = False
 	BIGSHOT = False
 	padding = 0
 	dd = 0x55
@@ -242,6 +246,14 @@ if __name__ == "__main__":
 			print("Error: Could not parse padding amount!\n\t" + str(v))
 			print(callForHelp)
 			exit(-1)
+
+	if "-c" in sys.argv:
+		if not writeOut:
+			print("Warning: No cowfile will be created as the -w flag is not set")
+		else:
+			makeCow = True
+			cowFilename = outFilename.split('.')[0] + ".cow"
+			padding = max(8, padding)
 
 	if "-d" in sys.argv:
 		try:
@@ -284,4 +296,17 @@ if __name__ == "__main__":
 		f.write(s)
 		f.close()
 		print("Wrote contents into " + outFilename)
+		if makeCow:
+			firstLine  = "    $thoughts   " + s.split('\n')[0][8:]
+			secondLine = "     $thoughts  " + s.split('\n')[1][8:]
+			thirdLine  = "      $thoughts " + s.split('\n')[2][8:]
+
+			f = open(cowFilename, 'w')
+			f.write(
+				"#\n# Put a witty comment here\n#\n$the_cow = <<EOC;\n" \
+				+ firstLine + '\n' + secondLine + '\n' + thirdLine + '\n' \
+				+ '\n'.join(s.split('\n')[3:])+ "EOC\n"
+			)
+			f.close()
+			print("Created cowfile at " + cowFilename + ';')
 
