@@ -4,25 +4,32 @@ import numpy as np
 import colorama as cr
 # Compute (crudely) which basic color each pixel is closest to in RGB space,
 # and return a paletted image along with some other metrics
-def convertTo16Color(image : np.array, darkDelta : int = 127) -> dict:
+def convertTo16Color(image : np.array, darkDelta : int = 0x55) -> dict:
+	f = 0xff # Full
+	h = 0x55 # Half
 	# Define gray-shades & colors
 	black = np.array([0, 0, 0], np.int16)
-	white = np.array([255, 255, 255], np.int16)
-	lightGray = white - 63 #- darkDelta // 2
-	darkGray = black + 63 #+ darkDelta // 2
-
-	red = np.array([0, 0, 255], np.int16)
+	white = np.array([f, f, f], np.int16)
+	
+	darkGray = np.minimum(white - darkDelta, black + darkDelta)
+	lightGray = np.maximum(white - darkDelta, black + darkDelta)
+	
+	red = np.array([h, h, f], np.int16)
 	redDim = np.maximum(red - darkDelta, 0)
-	green = np.array([0, 255, 0], np.int16)
+	
+	green = np.array([h, f, h], np.int16)
 	greenDim = np.maximum(green - darkDelta, 0)
-	blue = np.array([255, 0, 0], np.int16)
+	
+	blue = np.array([f, h, h], np.int16)
 	blueDim = np.maximum(blue - darkDelta, 0)
-
-	magenta = np.array([255, 0, 255], np.int16)
+	
+	magenta = np.array([f, h, f], np.int16)
 	magentaDim = np.maximum(magenta - darkDelta, 0)
-	yellow = np.array([0, 255, 255], np.int16)
+	
+	yellow = np.array([h, f, f], np.int16)
 	yellowDim = np.maximum(yellow - darkDelta, 0)
-	cyan = np.array([255, 255, 0], np.int16)
+	
+	cyan = np.array([f, f, h], np.int16)
 	cyanDim = np.maximum(cyan - darkDelta, 0)
 	# Check if the image has an alpha channel, and separate it if so
 	transparent = False
@@ -84,7 +91,7 @@ def convertTo16Color(image : np.array, darkDelta : int = 127) -> dict:
 def stringifyImageWithColor(
 	image : np.array,
 	leftPadding : int = 0,
-	darkDelta : int = 127,
+	darkDelta : int = 0x55,
 	BIGSHOT : bool = False
 ) -> str:
 	# Perform the palette conversion and get the color index values we need
@@ -173,17 +180,17 @@ def stringifyImageWithColor(
 if __name__ == "__main__":
 	try:
 		source = cv.imread(sys.argv[-1], cv.IMREAD_UNCHANGED)
+		if source is None:
+			print("Error: Image file not found!\n\t" + sys.argv[-1])
+			exit(-1)
 	except IndexError as i:
 		print("Error: No image file provided!\n\t" + i)
-		exit(-1)
-	except FileNotFoundError as f:
-		print("Error: Image file not found!\n\t" + i)
 		exit(-1)
 
 	writeOut = False
 	BIGSHOT = False
 	padding = 0
-	dd = 127
+	dd = 0x55
 
 	if "-w" in sys.argv:
 		try:
@@ -208,7 +215,11 @@ if __name__ == "__main__":
 
 	if "-d" in sys.argv:
 		try:
-			dd = int(sys.argv[sys.argv.index("-d") + 1])
+			dd = sys.argv[sys.argv.index("-d") + 1]
+			if len(dd) > 2 and dd[:2] == "0x":
+				dd = int(dd, base = 16)
+			else:
+				dd = int(dd)
 		except IndexError as i:
 			print("Error: No darkness delta amount specified!\n\t" + i)
 			exit(-1)
