@@ -4,7 +4,7 @@ import numpy as np
 import colorama as cr
 # Compute (crudely) which basic color each pixel is closest to in RGB space,
 # and return a paletted image along with some other metrics
-def convertTo16Color(image : np.array, darkDelta : int = 0x55) -> dict:
+def convertTo16Color(image : np.array, darkDelta : int = 0x55, colorCutoff : int = 32) -> dict:
 	f = 0xff # Full
 	h = 0x55 # Half
 	# Define gray-shades & colors
@@ -62,7 +62,7 @@ def convertTo16Color(image : np.array, darkDelta : int = 0x55) -> dict:
 	lacksColor = (
 		np.maximum(np.maximum(image[:, :, 0], image[:, :, 1]), image[:, :, 2]) - \
 		np.minimum(np.minimum(image[:, :, 0], image[:, :, 1]), image[:, :, 2])
-	) < 32 # <-- (boolean array)
+	) < colorCutoff # <-- (boolean array)
 	# (These will get mapped after the colors do)
 
 	# Determine which color has the minimum difference value,
@@ -92,10 +92,11 @@ def stringifyImageWithColor(
 	image : np.array,
 	leftPadding : int = 0,
 	darkDelta : int = 0x55,
+	colorCutoff : int = 32,
 	BIGSHOT : bool = False
 ) -> str:
 	# Perform the palette conversion and get the color index values we need
-	image16Color = convertTo16Color(image, darkDelta)["ids"]
+	image16Color = convertTo16Color(image, darkDelta, colorCutoff)["ids"]
 	# If we'll be using half-block characters, make the number of rows even
 	if not BIGSHOT and image16Color.shape[0] % 2 == 1:
 		image16Color = np.vstack(
@@ -222,6 +223,7 @@ if __name__ == "__main__":
 	BIGSHOT = False
 	padding = 0
 	dd = 0x55
+	cc = 32
 
 	if "-w" in sys.argv:
 		try:
@@ -254,6 +256,17 @@ if __name__ == "__main__":
 			makeCow = True
 			cowFilename = outFilename.split('.')[0] + ".cow"
 			padding = max(8, padding)
+	if "-g" in sys.argv:
+		try:
+			cc = int(sys.argv[sys.argv.index("-g") + 1], base = 0)
+		except IndexError as i:
+			print("Error: No color cutoff amount specified!\n\t" + str(i))
+			print(callForHelp)
+			exit(-1)
+		except ValueError as v:
+			print("Error: Could not parse color cutoff amount!\n\t" + str(v))
+			print(callForHelp)
+			exit(-1)
 
 	if "-d" in sys.argv:
 		try:
@@ -285,10 +298,10 @@ if __name__ == "__main__":
 			step = 8
 		for d in (np.arange(count) * step) + begin:
 			print("darknessDelta:", d, "(0x" + format(d, "x") + ")")
-			print(stringifyImageWithColor(source, padding, d, BIGSHOT))
+			print(stringifyImageWithColor(source, padding, d, cc, BIGSHOT))
 		exit(0)
 
-	s = stringifyImageWithColor(source, padding, dd, BIGSHOT)
+	s = stringifyImageWithColor(source, padding, dd, cc, BIGSHOT)
 	print(s)
 
 	if writeOut:
