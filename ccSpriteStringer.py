@@ -93,7 +93,8 @@ def stringifyImageWithColor(
 	leftPadding : int = 0,
 	darkDelta : int = 0x55,
 	colorCutoff : int = 32,
-	BIGSHOT : bool = False
+	BIGSHOT : bool = False,
+	noColor : bool = False
 ) -> str:
 	# Perform the palette conversion and get the color index values we need
 	image16Color = convertTo16Color(image, darkDelta, colorCutoff)["ids"]
@@ -139,6 +140,9 @@ def stringifyImageWithColor(
 		cr.Back.WHITE,
 		cr.Back.LIGHTWHITE_EX
 	]
+	if noColor:
+		colorCodesFore = [cr.Fore.RESET for i in range(16)]
+		colorCodesBack = [cr.Back.RESET for i in range(16)]
 	# Make the string
 	s = ' ' * leftPadding
 	if BIGSHOT: # Use full block characters only (bigger)
@@ -221,6 +225,7 @@ if __name__ == "__main__":
 	writeOut = False
 	makeCow = False
 	BIGSHOT = False
+	noColor = False
 	padding = 0
 	dd = 0x55
 	cc = 32
@@ -236,6 +241,9 @@ if __name__ == "__main__":
 
 	if "-B" in sys.argv:
 		BIGSHOT = True
+
+	if "-n" in sys.argv:
+		noColor = True
 
 	if "-p" in sys.argv:
 		try:
@@ -301,7 +309,7 @@ if __name__ == "__main__":
 			print(stringifyImageWithColor(source, padding, d, cc, BIGSHOT))
 		exit(0)
 
-	s = stringifyImageWithColor(source, padding, dd, cc, BIGSHOT)
+	s = stringifyImageWithColor(source, padding, dd, cc, BIGSHOT, noColor)
 	print(s)
 
 	if writeOut:
