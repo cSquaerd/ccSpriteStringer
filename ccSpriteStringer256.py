@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+import os
 from argparse import ArgumentParser, RawTextHelpFormatter
 
 def adjust_brightness_contrast(in_image : np.array, contrast : float, brightness : int) -> np.array:
@@ -13,7 +14,7 @@ def rgb_to_twofiftysix(in_image : np.array, grayify : bool = True) -> np.array:
 	SIX_BIT_COLOR_SCALAR = int(255 / 5) # == 51
 	IMAGE_DTYPE = np.uint8
 	GRAY_DELTA_LIMIT = 5
-	BLACK_UPPER_LIMIT = 8
+	BLACK_UPPER_LIMIT = 7
 	WHITE_LOWER_LIMIT = 248
 	ALPHA_CHANNEL = 3
 	
@@ -35,7 +36,7 @@ def rgb_to_twofiftysix(in_image : np.array, grayify : bool = True) -> np.array:
 	if grayify:
 		where_gray = np.where(
 			(np.max(in_image, axis = 2) - np.min(in_image, axis = 2) < GRAY_DELTA_LIMIT)
-			& (np.min(in_image, axis = 2) >= BLACK_UPPER_LIMIT) & (np.max(in_image, axis = 2) < WHITE_LOWER_LIMIT)
+			& (np.min(in_image, axis = 2) > BLACK_UPPER_LIMIT) & (np.max(in_image, axis = 2) < WHITE_LOWER_LIMIT)
 		)
 
 		out_image[where_gray] = ((np.round(np.average(in_image, axis = 2)) - 8) // 10 + 232)[where_gray]
@@ -63,6 +64,22 @@ def twofiftysix_to_string(indexed_image : np.array) -> str:
 		s += '\n'
 
 	return s
+
+def cowify(sprite_string : str, witty_comment : str) -> str:
+	COW_HEADER = "#\n# {:s}\n#\n$the_cow = <<EOC;\n".format(witty_comment)
+	COW_FOOTER = "\nEOC"
+	def get_padding(line_index : int) -> str:
+		if line_index >= 3:
+			return "    "
+		else:
+			return " {:s}$thoughts{:s}".format(' ' * line_index, ' ' * (2 - line_index))
+
+	lines = sprite_string.split('\n')
+	for l in range(len(lines)):
+		if len(lines[l]) > 0:
+			lines[l] = get_padding(l) + lines[l]
+
+	return COW_HEADER + '\n'.join(lines) + COW_FOOTER
 
 def interactive_bcg(sprite : np.array, contrast_0 : float, brightness_0 : int, nogray_0 : bool):
 	running = True
@@ -161,28 +178,41 @@ def main():
 	)
 
 	parser.add_argument(
+		"-b", "--brightness", action = "store", default = 0, metavar = "B (int)",
+		help = "Adjust the brightness before casting colors to 6-bit\n  (-255 <= B <= 255)"
+	)
+
+	parser.add_argument(
+		"-c", "--contrast", action = "store", default = 1.0, metavar = "C (float)",
+		help = "Adjust the contrast before casting colors to 6-bit\n  (C >= 0)"
+	)
+
+	parser.add_argument(
 		"-n", "--nogray", action = "store_true",
-		help = "Do not detect gray pixels and do not map them to the 24 gray levels"
-	)
-
-	parser.add_argument(
-		"-B", "--bigshot", action = "store_true",
-		help = "Use double full blocks instead of half blocks, doubling the sprite size"
-	)
-
-	parser.add_argument(
-		"-c", "--contrast", action = "store", default = 1.0,
-		help = "Adjust the contrast before casting colors to 6-bit"
-	)
-
-	parser.add_argument(
-		"-b", "--brightness", action = "store", default = 0,
-		help = "Adjust the brightness before casting colors to 6-bit"
+		help = "Do not explicitly detect gray pixels to map to the 24 gray levels"
 	)
 
 	parser.add_argument(
 		"-i", "--interactive", action = "store_true",
 		help = "Interactively tweak brightness, contrast, and gray pixel usage"
+	)
+
+	parser.add_argument(
+		"-B", "--bigshot", action = "store_true",
+		help = "Use double full blocks instead of half blocks,\ndoubling the sprite size"
+	)
+	
+	parser.add_argument(
+		"-C", "--cowfile", action = "store_true",
+		help = (
+			"Create a cowfile representation of the sprite\n  (File will be created in the working directory"
+			"\n  with the same basename as the sprite image)\n  (Ignored in interactive mode)"
+		)
+	)
+
+	parser.add_argument(
+		"-m", "--cowfile_comment", action = "store", default = "Put a witty comment here", metavar = "COMMENT (str)",
+		help = "Comment to put at the top of the cowfile if in cowfile mode"
 	)
 
 	argv = parser.parse_args()
@@ -193,26 +223,34 @@ def main():
 		if argv.interactive:
 			interactive_bcg(sprite, float(argv.contrast), int(argv.brightness), argv.nogray)
 		elif argv.contrast != 1. or argv.brightness != 0:
-			print(
-				twofiftysix_to_string(
-					rgb_to_twofiftysix(
-						adjust_brightness_contrast(sprite, float(argv.contrast), int(argv.brightness)), not argv.nogray
-					)
+			sprite_string = twofiftysix_to_string(
+				rgb_to_twofiftysix(
+					adjust_brightness_contrast(sprite, float(argv.contrast), int(argv.brightness)), not argv.nogray
 				)
 			)
 		else:
-			print(
-				twofiftysix_to_string(
-					rgb_to_twofiftysix(sprite, not argv.nogray) #, parser.bigshot
-				)
+			sprite_string = twofiftysix_to_string(
+				rgb_to_twofiftysix(sprite, not argv.nogray) #, parser.bigshot
 			)
+
+		if not argv.interactive:
+			if argv.cowfile:
+				try:
+					cowfile_name = argv.sprite.split(os.sep)[-1].split('.')[0] + ".cow"
+					print("Writing cowfile to {:s}...".format(cowfile_name))
+					with open(cowfile_name, 'w') as cowfile:
+						cowfile.write(cowify(sprite_string, argv.cowfile_comment))
+				except Exception as e:
+					print("Error! Could not write cowfile! <{!s}>".format(e))
+			
+			print(sprite_string)
 	
 	except FileNotFoundError as fnfe:
-		print("Error! {:s} could not be opened! <{:s}>".format(argv.sprite, str(fnfe)))
+		print("Error! {:s} could not be opened! <{!s}>".format(argv.sprite, fnfe))
 		exit(-1)
 
 	except AttributeError as ae:
-		print("Error! Argument parsing failed! <{:s}>".format(str(ae)))
+		print("Error! Argument parsing failed! <{!s}>".format(ae))
 	
 if __name__ == "__main__":
 	main()
