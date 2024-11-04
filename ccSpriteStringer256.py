@@ -64,6 +64,92 @@ def twofiftysix_to_string(indexed_image : np.array) -> str:
 
 	return s
 
+def interactive_bcg(sprite : np.array, contrast_0 : float, brightness_0 : int, nogray_0 : bool):
+	running = True
+	contrast = contrast_0
+	brightness = brightness_0
+	nogray = nogray_0
+	modified = True
+
+	while running:
+		if modified:
+			print(
+				twofiftysix_to_string(
+					rgb_to_twofiftysix(adjust_brightness_contrast(sprite, contrast, brightness), not nogray)
+				)
+			)
+			print(
+				'\n'.join(
+					[
+						"No Grayscale: {!r}".format(nogray),
+						"Brightness: {:4d}".format(brightness),
+						"Contrast: {:6.2F}".format(contrast)
+					]
+				)
+			)
+			modified = False
+
+		command = input("Enter a command ('h' for help): ")
+
+		if command in ('h', "help"):
+			print(
+				'\n'.join(
+					[
+						"'b [int]': set brightness", "'bp': increment brightness by 5", "'bm': decrement brightness by 5",
+						"'c [float]': set contrast", "'cp': increment contrast by 0.05", "'cm': decrement contrast by 0.05",
+						"'g': toggle No Grayscale flag", "'r': reset values", "'o': show original image",
+						"'h': print this help listing", "'q': quit program"
+					]
+				) + '\n'
+			)
+
+		elif command.split(' ')[0] in ('b', "bright", "brightness"):
+			try:
+				brightness = int(command.split(' ')[1])
+				modified = True
+			except ValueError as ve:
+				print("Error: Bad Input <{!r}>".format(ve))
+
+		elif command.split(' ')[0] in ('c', "con", "contrast"):
+			try:
+				contrast = float(command.split(' ')[1])
+				modified = True
+			except ValueError as ve:
+				print("Error: Bad Input <{!r}>".format(ve))
+
+		elif command == "bp":
+			brightness += 5
+			modified = True
+
+		elif command == "bm":
+			brightness -= 5
+			modified = True
+
+		elif command == "cp":
+			contrast += 0.05
+			modified = True
+
+		elif command == "cm":
+			contrast -= 0.05
+			modified = True
+
+		elif command in ('g', "gray", "grayscale"):
+			nogray = not nogray
+			modified = True
+
+		elif command in ('r', "reset"):
+			brightness = brightness_0
+			contrast = contrast_0
+			nogray = nogray_0
+			modified = True
+
+		elif command in ('o', "original"):
+			print(twofiftysix_to_string(rgb_to_twofiftysix(sprite)))
+
+		elif command in ('q', "quit"):
+			return
+
+
 def main():
 	parser = ArgumentParser(
 		description = "Convert PNGs (transparent or otherwise) into 256-color ANSI text sprites",
@@ -94,12 +180,19 @@ def main():
 		help = "Adjust the brightness before casting colors to 6-bit"
 	)
 
+	parser.add_argument(
+		"-i", "--interactive", action = "store_true",
+		help = "Interactively tweak brightness, contrast, and gray pixel usage"
+	)
+
 	argv = parser.parse_args()
 
 	try:
 		sprite = cv.imread(argv.sprite, cv.IMREAD_UNCHANGED)
 	
-		if argv.contrast != 1. or argv.brightness != 0:
+		if argv.interactive:
+			interactive_bcg(sprite, float(argv.contrast), int(argv.brightness), argv.nogray)
+		elif argv.contrast != 1. or argv.brightness != 0:
 			print(
 				twofiftysix_to_string(
 					rgb_to_twofiftysix(
