@@ -46,22 +46,33 @@ def rgb_to_twofiftysix(in_image : np.array, grayify : bool = True) -> np.array:
 
 	return out_image
 
-def twofiftysix_to_string(indexed_image : np.array) -> str:
-	if indexed_image.shape[0] % 2 == 1:
-		indexed_image = np.vstack([indexed_image, np.zeros(indexed_image.shape[1], np.uint8)])
-
+def twofiftysix_to_string(indexed_image : np.array, bigshot : bool) -> str:
 	s = ""
-	for y in range(0, indexed_image.shape[0], 2):
-		for x in range(indexed_image.shape[1]):
-			if indexed_image[y, x] == 0 and indexed_image[y + 1, x] == 0:
-				s += ' '
-			elif indexed_image[y, x] == 0:
-				s += "\x1B[38;5;{:d}m\u2584\x1B[0m".format(indexed_image[y + 1, x])
-			elif indexed_image[y + 1, x] == 0:
-				s += "\x1B[38;5;{:d}m\u2580\x1B[0m".format(indexed_image[y, x])
-			else:
-				s += "\x1B[38;5;{:d};48;5;{:d}m\u2580\x1B[0m".format(indexed_image[y, x], indexed_image[y + 1, x])
-		s += '\n'
+
+	if bigshot:
+		for y in range(indexed_image.shape[0]):
+			for x in range(indexed_image.shape[1]):
+				if indexed_image[y, x] == 0:
+					s += "  "
+				else:
+					s += "\x1B[38;5;{:d}m\u2588\u2588\x1B[0m".format(indexed_image[y, x])
+			s += '\n'
+
+	else:
+		if indexed_image.shape[0] % 2 == 1:
+			indexed_image = np.vstack([indexed_image, np.zeros(indexed_image.shape[1], np.uint8)])
+
+		for y in range(0, indexed_image.shape[0], 2):
+			for x in range(indexed_image.shape[1]):
+				if indexed_image[y, x] == 0 and indexed_image[y + 1, x] == 0:
+					s += ' '
+				elif indexed_image[y, x] == 0:
+					s += "\x1B[38;5;{:d}m\u2584\x1B[0m".format(indexed_image[y + 1, x])
+				elif indexed_image[y + 1, x] == 0:
+					s += "\x1B[38;5;{:d}m\u2580\x1B[0m".format(indexed_image[y, x])
+				else:
+					s += "\x1B[38;5;{:d};48;5;{:d}m\u2580\x1B[0m".format(indexed_image[y, x], indexed_image[y + 1, x])
+			s += '\n'
 
 	return s
 
@@ -92,7 +103,7 @@ def interactive_bcg(sprite : np.array, contrast_0 : float, brightness_0 : int, n
 		if modified:
 			print(
 				twofiftysix_to_string(
-					rgb_to_twofiftysix(adjust_brightness_contrast(sprite, contrast, brightness), not nogray)
+					rgb_to_twofiftysix(adjust_brightness_contrast(sprite, contrast, brightness), not nogray), False
 				)
 			)
 			print(
@@ -161,7 +172,7 @@ def interactive_bcg(sprite : np.array, contrast_0 : float, brightness_0 : int, n
 			modified = True
 
 		elif command in ('o', "original"):
-			print(twofiftysix_to_string(rgb_to_twofiftysix(sprite)))
+			print(twofiftysix_to_string(rgb_to_twofiftysix(sprite), False))
 
 		elif command in ('q', "quit"):
 			return
@@ -199,7 +210,7 @@ def main():
 
 	parser.add_argument(
 		"-B", "--bigshot", action = "store_true",
-		help = "Use double full blocks instead of half blocks,\ndoubling the sprite size"
+		help = "Use double full blocks instead of half blocks,\ndoubling the sprite size\n  (Ignored in interactive mode)"
 	)
 	
 	parser.add_argument(
@@ -226,11 +237,12 @@ def main():
 			sprite_string = twofiftysix_to_string(
 				rgb_to_twofiftysix(
 					adjust_brightness_contrast(sprite, float(argv.contrast), int(argv.brightness)), not argv.nogray
-				)
+				),
+				argv.bigshot
 			)
 		else:
 			sprite_string = twofiftysix_to_string(
-				rgb_to_twofiftysix(sprite, not argv.nogray) #, parser.bigshot
+				rgb_to_twofiftysix(sprite, not argv.nogray), argv.bigshot
 			)
 
 		if not argv.interactive:
