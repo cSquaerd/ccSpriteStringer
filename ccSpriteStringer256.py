@@ -2,6 +2,13 @@ import cv2 as cv
 import numpy as np
 from argparse import ArgumentParser, RawTextHelpFormatter
 
+def adjust_brightness_contrast(in_image : np.array, contrast : float, brightness : int) -> np.array:
+	if in_image.shape[2] > 3:
+		contrast = np.array([contrast, contrast, contrast, 1.])
+		brightness = np.array([brightness, brightness, brightness, 0])
+	
+	return np.round(np.clip(contrast * in_image.astype(np.int16) + brightness, 0, 255)).astype(np.uint8)
+
 def rgb_to_twofiftysix(in_image : np.array, grayify : bool = True) -> np.array:
 	SIX_BIT_COLOR_SCALAR = int(255 / 5) # == 51
 	IMAGE_DTYPE = np.uint8
@@ -73,20 +80,39 @@ def main():
 	)
 
 	parser.add_argument(
-		"-b", "--bigshot", action = "store_true",
+		"-B", "--bigshot", action = "store_true",
 		help = "Use double full blocks instead of half blocks, doubling the sprite size"
+	)
+
+	parser.add_argument(
+		"-c", "--contrast", action = "store", default = 1.0,
+		help = "Adjust the contrast before casting colors to 6-bit"
+	)
+
+	parser.add_argument(
+		"-b", "--brightness", action = "store", default = 0,
+		help = "Adjust the brightness before casting colors to 6-bit"
 	)
 
 	argv = parser.parse_args()
 
 	try:
 		sprite = cv.imread(argv.sprite, cv.IMREAD_UNCHANGED)
-		
-		print(
-			twofiftysix_to_string(
-				rgb_to_twofiftysix(sprite, not argv.nogray) #, parser.bigshot
+	
+		if argv.contrast != 1. or argv.brightness != 0:
+			print(
+				twofiftysix_to_string(
+					rgb_to_twofiftysix(
+						adjust_brightness_contrast(sprite, float(argv.contrast), int(argv.brightness)), not argv.nogray
+					)
+				)
 			)
-		)
+		else:
+			print(
+				twofiftysix_to_string(
+					rgb_to_twofiftysix(sprite, not argv.nogray) #, parser.bigshot
+				)
+			)
 	
 	except FileNotFoundError as fnfe:
 		print("Error! {:s} could not be opened! <{:s}>".format(argv.sprite, str(fnfe)))
