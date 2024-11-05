@@ -137,6 +137,8 @@ def interactive_bcg(sprite : np.array, contrast_0 : float, brightness_0 : int, n
 				modified = True
 			except ValueError as ve:
 				print("Error: Bad Input <{!r}>".format(ve))
+			except IndexError as ie:
+				print("Error: Bad Input <{!r}>".format(ie))
 
 		elif command.split(' ')[0] in ('c', "con", "contrast"):
 			try:
@@ -144,6 +146,8 @@ def interactive_bcg(sprite : np.array, contrast_0 : float, brightness_0 : int, n
 				modified = True
 			except ValueError as ve:
 				print("Error: Bad Input <{!r}>".format(ve))
+			except IndexError as ie:
+				print("Error: Bad Input <{!r}>".format(ie))
 
 		elif command == "bp":
 			brightness += 5
