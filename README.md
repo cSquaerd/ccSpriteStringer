@@ -1,5 +1,6 @@
 # ccSpriteStringer
 ## Turns PNG sprites into strings of 256-color unicode block characters
+### *(Examples can be found at my other repo, [ccCowsprites](https://github.com/cSquaerd/ccCowsprites/tree/master/cowfiles))*
 
 ## Package installation (example): `pip install --user --break-system-packages .`
 *(That second flag is needed on Arch systems, even though it's all going to `~/.local/lib/`)*
