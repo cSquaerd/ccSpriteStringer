@@ -1,34 +1,31 @@
 # ccSpriteStringer
-## Turns PNG sprites into strings of 16-color unicode block characters
+## Turns PNG sprites into strings of 256-color unicode block characters
 
-## Usage: `python ccSpriteStringer.py [flags] imageFilename`
+## Package installation (example): `pip install --user --break-system-packages .`
+*(That second flag is needed on Arch systems, even though it's all going to `~/.local/lib/`)*
+
+## Usage (raw): `python ccSpriteStringer256.py [flags] imageFilename`
+## Usage (package): `python -m spritestringer [flags] imageFilename`
 
 ## Flags:
-* `-h`
-	* Show this helpful information page
+```
+  -h, --help            show this help message and exit
+  -b, --brightness B (int)
+                        Adjust the brightness before casting colors to 6-bit
+                          (-255 <= B <= 255)
+  -c, --contrast C (float)
+                        Adjust the contrast before casting colors to 6-bit
+                          (C >= 0)
+  -n, --nogray          Do not explicitly detect gray pixels to map to the 24 gray levels
+  -i, --interactive     Interactively tweak brightness, contrast, and gray pixel usage
+  -B, --bigshot         Use double full blocks instead of half blocks,
+                        doubling the sprite size
+                          (Ignored in interactive mode)
+  -C, --cowfile         Create a cowfile representation of the sprite
+                          (File will be created in the working directory
+                          with the same basename as the sprite image)
+                          (Ignored in interactive mode)
+  -m, --cowfile_comment COMMENT (str)
+                        Comment to put at the top of the cowfile if in cowfile mode
+```
 
-* `-w outputFilename`
-	* Write the ANSI escape codes and block characters into a text file
-
-* `-B`
-	* Print with full-block characters only (bigger than usual)
-
-* `-p offset`
-	* Print the sprite with `offset` many spaces on the left of each line;
-	Must be greater than 0
-
-* `-c`
-	* Compose a cowfile with the results, with three thoughts lines,
-	and a minimum `padding` value of 8; Requires the -w flag beforehand
-
-* `-d darknessDelta`
-	* Adjust the value by which the dark colors are represented;
-	The default internal value is 0x55, or 85 in decimal;
-	Must be greater than 0 and less than 255
-
-* `-D [begin end step]`
-	* Run through a range of darknessDelta values and show their results;
-	The default values are `begin`=16, `end`=136, and `step`=8;
-	Useful for when the default darknessDelta does not yield
-	satisfactory results; Ignores the -w flag;
-	`begin` must be less than `end`, and both must be between 0 and 255
