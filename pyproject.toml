@@ -1,3 +1,12 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "spritestringer"
-version = "1.2.3"
+description = "JPG/PNG sprite to ANSI-colored text convertor"
+version = "1.0.0"
+dependencies = ["opencv-python", "numpy"]
+authors = [{name = "Charles Patterson Cook", email = "cook.char.p@gmail.com"}]
+classifiers = ["License :: OSI Approved :: MIT License"]
+
